@@ -4,13 +4,14 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.gui.DrawContext;
 import net.minecraft.client.gui.screen.narration.NarrationMessageBuilder;
-import net.minecraft.client.gui.widget.EntryListWidget;
+import net.minecraft.client.gui.widget.AlwaysSelectedEntryListWidget;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 import semmiedev.disc_jockey.Main;
 import semmiedev.disc_jockey.Song;
 
-public class SongListWidget extends EntryListWidget<SongListWidget.SongEntry> {
+public class SongListWidget extends AlwaysSelectedEntryListWidget<SongListWidget.SongEntry> {
 
     public SongListWidget(MinecraftClient client, int width, int height, int top, int itemHeight) {
         super(client, width, height, top, itemHeight);
@@ -35,12 +36,12 @@ public class SongListWidget extends EntryListWidget<SongListWidget.SongEntry> {
     }
 
     @Override
-    protected void appendClickableNarrations(NarrationMessageBuilder builder) {
+    public void appendClickableNarrations(NarrationMessageBuilder builder) {
         // Who cares
     }
 
     // TODO: 6/2/2022 Add a delete icon
-    public static class SongEntry extends Entry<SongEntry> {
+    public static class SongEntry extends AlwaysSelectedEntryListWidget.Entry<SongEntry> {
         private static final Identifier ICONS = Identifier.of(Main.MOD_ID, "textures/gui/icons.png");
 
         public final int index;
@@ -71,6 +72,11 @@ public class SongListWidget extends EntryListWidget<SongListWidget.SongEntry> {
 
             RenderSystem.setShaderTexture(0, ICONS);
             context.drawTexture(ICONS, x + 2, y + 2, (favorite ? 26 : 0) + (isOverFavoriteButton(mouseX, mouseY) ? 13 : 0), 0, 13, 12, 52, 12);
+        }
+
+        @Override
+        public Text getNarration() {
+            return Text.literal(song.displayName);
         }
 
         @Override

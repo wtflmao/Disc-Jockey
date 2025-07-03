@@ -175,8 +175,8 @@ public class SongPlayer implements ClientTickEvents.StartWorldTick {
                     break; // Wait until it's time for this note
                 }
 
-                Note note = new Note(noteData);
-                @Nullable BlockPos blockPos = noteBlocks.get(note.instrumentEnum()).get(note.note());
+                NoteAdapter noteAdapter = new NoteAdapter(noteData);
+                @Nullable BlockPos blockPos = noteBlocks.get(noteAdapter.instrumentEnum()).get(noteAdapter.note());
                 
                 if (blockPos != null) {
                     if (!canInteractWith(client.player, blockPos)) {
@@ -201,7 +201,7 @@ public class SongPlayer implements ClientTickEvents.StartWorldTick {
                     }
 
                     // Send the packet to the server to play the sound
-                    ClientPlayNetworking.send(new PlayNotePacket(blockPos, note.originalMidiPitch()));
+                    ClientPlayNetworking.send(new PlayNotePacket(blockPos, noteAdapter.originalMidiPitch()));
                 }
 
                 index++;
@@ -239,6 +239,7 @@ public class SongPlayer implements ClientTickEvents.StartWorldTick {
                 long note = song.notes[index];
                 final long now = System.currentTimeMillis();
                 if ((short)note <= Math.round(tick)) {
+                    NoteAdapter noteAdapter = new NoteAdapter(note);
                     @Nullable BlockPos blockPos = noteBlocks.get(Note.INSTRUMENTS[(byte)(note >> Note.INSTRUMENT_SHIFT)]).get((byte)(note >> Note.NOTE_SHIFT));
                     if(blockPos == null) {
                         // Instrument got likely mapped to "nothing". Skip it

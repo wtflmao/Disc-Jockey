@@ -1,8 +1,6 @@
 package semmiedev.disc_jockey;
 
 import net.fabricmc.api.ModInitializer;
-import net.minecraft.text.MutableText;
-import net.minecraft.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import semmiedev.disc_jockey.network.PlayNotePacket;
@@ -12,7 +10,6 @@ import semmiedev.disc_jockey.network.ServerHelloPacket;
 
 public class CommonInitializer implements ModInitializer {
     public static final String MOD_ID = "disc_jockey";
-    public static final MutableText NAME = Text.literal("Disc Jockey");
     public static final Logger LOGGER = LoggerFactory.getLogger("Disc Jockey");
 
     @Override

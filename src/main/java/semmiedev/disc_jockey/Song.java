@@ -1,8 +1,7 @@
 package semmiedev.disc_jockey;
 
-import semmiedev.disc_jockey.gui.SongListWidget;
-
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Song {
     public final ArrayList<Note> uniqueNotes = new ArrayList<>();
@@ -15,7 +14,6 @@ public class Song {
     public int minutesSpent, leftClicks, rightClicks, blocksAdded, blocksRemoved;
     public String importFileName;
 
-    public SongListWidget.SongEntry entry;
     public String searchableFileName, searchableName;
 
     @Override

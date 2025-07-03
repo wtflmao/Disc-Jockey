@@ -42,8 +42,6 @@ public class SongLoader {
                 if (song != null) {
                     song.fileName = file.getName().replaceAll("[\\n\\r]", "");
                     song.displayName = song.name.replaceAll("\\s", "").isEmpty() ? song.fileName : song.name + " (" + song.fileName + ")";
-                    song.entry = new SongListWidget.SongEntry(song, SONGS.size());
-                    song.entry.favorite = Main.config.favorites.contains(song.fileName);
                     song.searchableFileName = song.fileName.toLowerCase().replaceAll("\\s", "");
                     song.searchableName = song.name.toLowerCase().replaceAll("\\s", "");
                     SONGS.add(song);
@@ -57,7 +55,14 @@ public class SongLoader {
 
             Main.config.favorites.removeIf(favorite -> SongLoader.SONGS.stream().map(s -> s.fileName).noneMatch(favorite::equals));
 
-            if (showToast && MinecraftClient.getInstance().textRenderer != null) SystemToast.add(MinecraftClient.getInstance().getToastManager(), SystemToast.Type.PACK_LOAD_FAILURE, Main.NAME, Text.translatable(Main.MOD_ID+".loading_done"));
+            if (showToast && MinecraftClient.getInstance().textRenderer != null) {
+                SystemToast.add(
+                    MinecraftClient.getInstance().getToastManager(), 
+                    SystemToast.Type.PACK_LOAD_FAILURE, 
+                    Text.literal(Main.NAME), 
+                    Text.translatable(Main.MOD_ID+".loading_done")
+                );
+            }
             showToast = true;
             loadingSongs = false;
         }).start();
@@ -98,9 +103,6 @@ public class SongLoader {
             song.loopStartTick = reader.readShort();
         }
 
-        // Display name and other properties are now set in the main loadSongs loop
-        // to ensure consistency between NBS and MIDI songs.
-
         short tick = -1;
         short jumps;
         while ((jumps = reader.readShort()) != 0) {
@@ -113,10 +115,9 @@ public class SongLoader {
                 byte noteId = (byte)(reader.readByte() - 33);
 
                 if (newFormat) {
-                    // Data that is not needed as it only works with commands
-                    reader.readByte(); // Velocity
-                    reader.readByte(); // Panning
-                    reader.readShort(); // Pitch
+                    reader.readByte(); 
+                    reader.readByte(); 
+                    reader.readShort();
                 }
 
                 if (noteId < 0) {

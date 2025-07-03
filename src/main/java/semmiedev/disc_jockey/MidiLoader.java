@@ -29,8 +29,8 @@ public class MidiLoader {
         INSTRUMENT_MAP.put(5, NoteBlockInstrument.HARP); // Electric Piano 2
         INSTRUMENT_MAP.put(6, NoteBlockInstrument.HARP); // Harpsichord
         INSTRUMENT_MAP.put(7, NoteBlockInstrument.HARP); // Clavinet
-        INSTRUMENT_MAP.put(8, NoteBlockInstrument.GLOWSTONE); // Celesta
-        INSTRUMENT_MAP.put(9, NoteBlockInstrument.GLOWSTONE); // Glockenspiel
+        INSTRUMENT_MAP.put(8, NoteBlockInstrument.PLING); // Celesta
+        INSTRUMENT_MAP.put(9, NoteBlockInstrument.PLING); // Glockenspiel
         INSTRUMENT_MAP.put(10, NoteBlockInstrument.BELL); // Music Box
         INSTRUMENT_MAP.put(11, NoteBlockInstrument.BELL); // Vibraphone
         INSTRUMENT_MAP.put(12, NoteBlockInstrument.BELL); // Marimba
@@ -99,6 +99,11 @@ public class MidiLoader {
         };
     }
 
+    // Helper method to extract tick from a note long value
+    private static int getTickFromLong(long noteLong) {
+        return (int)(noteLong & 0xFFFF); // Extract the first 16 bits
+    }
+
     /**
      * Loads a MIDI file and converts it into a Song object.
      *
@@ -128,7 +133,7 @@ public class MidiLoader {
         short tempo = (short) Math.round((bpm / 60.0) * 20.0 * 100.0);
 
         // --- Note Processing ---
-        List<Note> notes = new ArrayList<>();
+        List<Long> noteLongs = new ArrayList<>();
         int ppq = sequence.getResolution(); // Pulses (ticks) per quarter note
 
         int[] channelInstruments = new int[16];
@@ -170,18 +175,27 @@ public class MidiLoader {
                         // Encode original MIDI pitch into the note's long value for advanced playback
                         // Format: tick | layer << 16 | instrumentId << 24 | noteId << 32 | originalMidiPitch << 40
                         long noteLong = (long)songTick | (long)layer << 16 | (long)instrumentId << 24 | (long)noteId << 32 | (long)originalMidiPitch << 40;
-                        notes.add(new Note(noteLong));
+                        noteLongs.add(noteLong);
                     }
                 }
             }
         }
         
-        // Sort notes by tick as they might be out of order after processing tracks
-        notes.sort((n1, n2) -> Integer.compare(n1.tick(), n2.tick()));
+        // Sort notes by tick
+        noteLongs.sort((n1, n2) -> Integer.compare(getTickFromLong(n1), getTickFromLong(n2)));
 
         String name = midiFile.getName().substring(0, midiFile.getName().lastIndexOf('.'));
-        short length = notes.isEmpty() ? 0 : (short) notes.get(notes.size() - 1).tick();
+        short length = noteLongs.isEmpty() ? 0 : (short) getTickFromLong(noteLongs.get(noteLongs.size() - 1));
 
-        return new Song(name, "", "", length, tempo, notes.stream().mapToLong(Note::note).toArray());
+        // Create a new Song instance
+        Song song = new Song();
+        song.fileName = name;
+        song.name = name;
+        song.displayName = name;
+        song.length = length;
+        song.tempo = tempo;
+        song.notes = noteLongs.stream().mapToLong(Long::longValue).toArray();
+
+        return song;
     }
 } 

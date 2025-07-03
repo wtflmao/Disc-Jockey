@@ -31,10 +31,11 @@ import semmiedev.disc_jockey.network.ServerHelloPacket;
 import java.io.File;
 import java.util.ArrayList;
 
-import static semmiedev.disc_jockey.CommonInitializer.MOD_ID;
-import static semmiedev.disc_jockey.CommonInitializer.LOGGER;
-
 public class Main implements ClientModInitializer {
+    public static final String MOD_ID = "disc_jockey";
+    public static final String NAME = "Disc Jockey";
+    public static final Logger LOGGER = LogManager.getLogger(NAME);
+    
     public static final ArrayList<ClientTickEvents.StartWorldTick> TICK_LISTENERS = new ArrayList<>();
     public static final Previewer PREVIEWER = new Previewer();
     public static final SongPlayer SONG_PLAYER = new SongPlayer();
