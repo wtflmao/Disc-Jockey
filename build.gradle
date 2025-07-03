@@ -6,9 +6,14 @@ plugins {
 version = project.mod_version
 group = project.maven_group
 
+base {
+    archivesName = project.archives_base_name
+}
+
 repositories {
     maven { url "https://maven.shedaniel.me/" }
     maven { url "https://maven.terraformersmc.com/" }
+    maven { url "https://jitpack.io" }
 }
 
 dependencies {
@@ -25,6 +30,8 @@ dependencies {
     }
 
     modCompileOnly("com.terraformersmc:modmenu:10.0.0-beta.1")
+
+    implementation "com.github.Semmiedev:NBSTool-Java:v1.0"
 }
 
 processResources {
@@ -80,5 +87,44 @@ publishing {
         // Notice: This block does NOT have the same function as the block in the top level.
         // The repositories here will be used for publishing your artifact, not for
         // retrieving dependencies.
+    }
+}
+
+loom {
+    splitEnvironmentSourceSets()
+
+    mods {
+        "disc_jockey" {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+            sourceSet sourceSets.server
+        }
+    }
+}
+
+sourceSets {
+    main {
+        java {
+            srcDir "src/common/java"
+        }
+        resources {
+            srcDir "src/common/resources"
+        }
+    }
+    client {
+        java {
+            srcDir "src/client/java"
+        }
+        resources {
+            srcDir "src/client/resources"
+        }
+    }
+    server {
+        java {
+            srcDir "src/server/java"
+        }
+        resources {
+            srcDir "src/server/resources"
+        }
     }
 }

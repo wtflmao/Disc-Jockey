@@ -6,17 +6,25 @@
   "description": "Play note block songs in Minecraft",
   "authors": [
     "SemmieDev",
-    "EnderKill98"
+    "EnderKill98",
+    "wtflmao"
   ],
   "contact": {
-    "repo": "https://github.com/SemmieDev/Disc-Jockey"
+    "repo": "https://github.com/SemmieDev/Disc-Jockey",
+    "issues": "https://github.com/wtflmao/Disc-Jockey/issues"
   },
   "license": "MIT",
   "icon": "assets/disc_jockey/icon.png",
-  "environment": "client",
+  "environment": "*",
   "entrypoints": {
+    "main": [
+      "semmiedev.disc_jockey.CommonInitializer"
+    ],
     "client": [
       "semmiedev.disc_jockey.Main"
+    ],
+    "server": [
+      "semmiedev.disc_jockey.ServerInitializer"
     ],
     "modmenu": [
       "semmiedev.disc_jockey.ModMenuIntegration"
