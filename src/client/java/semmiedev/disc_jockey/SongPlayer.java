@@ -23,6 +23,8 @@ import net.minecraft.world.GameMode;
 import org.apache.commons.lang3.NotImplementedException;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import semmiedev.disc_jockey.network.PlayNotePacket;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -144,6 +146,75 @@ public class SongPlayer implements ClientTickEvents.StartWorldTick {
             last100MsSpanAt = -1L;
             return;
         }
+
+        if (Main.serverModPresent) {
+            tickPlaybackServer();
+        } else {
+            tickPlaybackClient();
+        }
+    }
+
+    private synchronized void tickPlaybackServer() {
+        long previousPlaybackTickAt = lastPlaybackTickAt;
+        lastPlaybackTickAt = System.currentTimeMillis();
+
+        if(noteBlocks != null && tuned) {
+            if(pausePlaybackUntil != -1L && System.currentTimeMillis() <= pausePlaybackUntil) return;
+            while (running) {
+                MinecraftClient client = MinecraftClient.getInstance();
+
+                if (index >= song.notes.length) {
+                    stop();
+                    didSongReachEnd = true;
+                    if (loopSong) start(song);
+                    break;
+                }
+
+                long noteData = song.notes[index];
+                if ((short) noteData > Math.round(tick)) {
+                    break; // Wait until it's time for this note
+                }
+
+                Note note = new Note(noteData);
+                @Nullable BlockPos blockPos = noteBlocks.get(note.instrumentEnum()).get(note.note());
+                
+                if (blockPos != null) {
+                    if (!canInteractWith(client.player, blockPos)) {
+                        stop();
+                        client.inGameHud.getChatHud().addMessage(Text.translatable(Main.MOD_ID + ".player.to_far").formatted(Formatting.RED));
+                        return;
+                    }
+                    
+                    final long now = System.currentTimeMillis();
+                    Vec3d unit = Vec3d.ofCenter(blockPos, 0.5).subtract(client.player.getEyePos()).normalize();
+
+                    // Look at the block
+                    if (lastLookSentAt == -1L || now - lastLookSentAt >= 50) {
+                        client.getNetworkHandler().sendPacket(new PlayerMoveC2SPacket.LookAndOnGround(MathHelper.wrapDegrees((float) (MathHelper.atan2(unit.z, unit.x) * 57.2957763671875) - 90.0f), MathHelper.wrapDegrees((float) (-(MathHelper.atan2(unit.y, Math.sqrt(unit.x * unit.x + unit.z * unit.z)) * 57.2957763671875))), true));
+                        lastLookSentAt = now;
+                    }
+
+                    // Swing hand for visual effect
+                    if (lastSwingSentAt == -1L || now - lastSwingSentAt >= 50) {
+                        client.executeSync(() -> client.player.swingHand(Hand.MAIN_HAND));
+                        lastSwingSentAt = now;
+                    }
+
+                    // Send the packet to the server to play the sound
+                    ClientPlayNetworking.send(new PlayNotePacket(blockPos, note.originalMidiPitch()));
+                }
+
+                index++;
+            }
+
+            if (running) {
+                long elapsedMs = previousPlaybackTickAt != -1L && lastPlaybackTickAt != -1L ? lastPlaybackTickAt - previousPlaybackTickAt : 16;
+                tick += song.millisecondsToTicks(elapsedMs) * speed;
+            }
+        }
+    }
+
+    private synchronized void tickPlaybackClient() {
         long previousPlaybackTickAt = lastPlaybackTickAt;
         lastPlaybackTickAt = System.currentTimeMillis();
         if(last100MsSpanAt != -1L && System.currentTimeMillis() - last100MsSpanAt >= 100) {

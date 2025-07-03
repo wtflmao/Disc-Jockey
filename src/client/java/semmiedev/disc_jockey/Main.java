@@ -8,9 +8,12 @@ import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallba
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.networking.v1.ClientLoginConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.network.ClientPlayNetworkHandler;
 import net.minecraft.client.option.KeyBinding;
 import net.minecraft.client.util.InputUtil;
 import net.minecraft.client.world.ClientWorld;
@@ -22,17 +25,21 @@ import org.apache.logging.log4j.Logger;
 import org.lwjgl.glfw.GLFW;
 import semmiedev.disc_jockey.gui.hud.BlocksOverlay;
 import semmiedev.disc_jockey.gui.screen.DiscJockeyScreen;
+import semmiedev.disc_jockey.network.ClientHelloPacket;
+import semmiedev.disc_jockey.network.ServerHelloPacket;
 
 import java.io.File;
 import java.util.ArrayList;
 
+import static semmiedev.disc_jockey.CommonInitializer.MOD_ID;
+import static semmiedev.disc_jockey.CommonInitializer.LOGGER;
+
 public class Main implements ClientModInitializer {
-    public static final String MOD_ID = "disc_jockey";
-    public static final MutableText NAME = Text.literal("Disc Jockey");
-    public static final Logger LOGGER = LogManager.getLogger("Disc Jockey");
     public static final ArrayList<ClientTickEvents.StartWorldTick> TICK_LISTENERS = new ArrayList<>();
     public static final Previewer PREVIEWER = new Previewer();
     public static final SongPlayer SONG_PLAYER = new SongPlayer();
+
+    public static boolean serverModPresent = false;
 
     public static File songsFolder;
     public static Config config;
@@ -80,9 +87,22 @@ public class Main implements ClientModInitializer {
             DiscjockeyCommand.register(dispatcher);
         });
 
-        ClientLoginConnectionEvents.DISCONNECT.register((handler, client) -> {
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> {
+            serverModPresent = false; // Reset on join
+            ClientPlayNetworking.send(ClientHelloPacket.INSTANCE);
+        });
+
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            serverModPresent = false;
             PREVIEWER.stop();
             SONG_PLAYER.stop();
+        });
+
+        ClientPlayNetworking.registerGlobalReceiver(ServerHelloPacket.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                serverModPresent = true;
+                LOGGER.info("Disc Jockey server mod detected. Enabling advanced playback features.");
+            });
         });
 
         HudRenderCallback.EVENT.register(BlocksOverlay::render);
